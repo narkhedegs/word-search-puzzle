@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>Word Search Puzzle</title>
+	<link rel="stylesheet" href="bower_components/bootstrap/dist/css/bootstrap.css">
+	<style>
+		#puzzleTable {
+			table-layout: fixed;
+		}
+		#puzzleTable, #puzzleTable td {
+			border: 2px solid black;
+			border-collapse: collapse;
+		}
+		#puzzleTable td {
+			text-align: center;
+		}
+	</style>
+</head>
+<body>
+	<div class="container">
+		<div class="row">
+			<div class="col-md-12">
+				<h3>Word Search</h3>
+
+			</div>
+		</div>
+		<div class="row">
+			<div id="puzzleContainer" class="col-md-12"></div>
+		</div>
+	</div>
+
+	<script src="bower_components/jquery/dist/jquery.js"></script>
+	<script src="bower_components/bootstrap/dist/js/bootstrap.js"></script>
+	<script>
+		$(document).ready(function () {
+			var words = new Array("apple", "ball", "cat", "dog", "elephant", "fox", "green", "hat", "ice", "joker", "kite", "lemon", "monkey", "nose", "ox", "peter", "queen", "rat", "solution", "tween", "ultraviolet", "wolf", "xenon", "yellow", "zebra");
+			var longestWord = words.sort(function(a,b){ return b.length - a.length; })[0];
+			var puzzleSize = longestWord.length;
+			renderPuzzleTable(puzzleSize);
+			for (wordCount = 0; wordCount < words.length; wordCount++) {
+				var word = words[wordCount];
+				var placements = findPlacements(word, puzzleSize);
+				var randomPlacementIndex = getRandomInteger(0, placements.length - 1);
+				var randomPlacement = placements[randomPlacementIndex];
+				while (!placeWord(word, randomPlacement)) {
+					placements.splice(randomPlacementIndex, 1);
+					if (placements.length !== 0) {
+						randomPlacementIndex = getRandomInteger(0, placements.length - 1);
+						randomPlacement = placements[randomPlacementIndex];
+					} else {
+						break;
+					}
+				}
+
+				if (placements.length === 0) {
+					puzzleSize += 1;
+					renderPuzzleTable(puzzleSize);
+					wordCount = -1;
+				}
+			}
+
+			function placeWord(word, placement) {
+				var isSuccess = true;
+				var startRow = placement[0];
+				var startColumn = placement[1];
+				var direction = placement[2];
+				var isOverlap = false;
+				var isOverlapPossible = true;
+
+				switch (direction) {
+					case "horizontal":
+					var tempColumn = startColumn;
+					for (i = 0; i < word.length; i++) {
+						var cell = $('#puzzleTable tr').eq(startRow).find('td').eq(tempColumn);
+						if (cell.html() !== "") {
+							isOverlap = true;
+							if (cell.html() !== word[i]) {
+								isOverlapPossible = false;
+								isSuccess = false;
+								break;
+							}
+						}
+						tempColumn++;
+					}
+
+					if ((!isOverlap) || (isOverlap && isOverlapPossible)) {
+						for (i = 0; i < word.length; i++) {
+							var cell = $('#puzzleTable tr').eq(startRow).find('td').eq(startColumn);
+							cell.html(word[i]);
+							startColumn++;
+						}
+					}
+					break;
+					case "vertical":
+					var tempRow = startRow;
+					for (i = 0; i < word.length; i++) {
+						var cell = $('#puzzleTable tr').eq(tempRow).find('td').eq(startColumn);
+						if (cell.html() !== "") {
+							isOverlap = true;
+							if (cell.html() !== word[i]) {
+								isOverlapPossible = false;
+								isSuccess = false;
+								break;
+							}
+						}
+						tempRow++;
+					}
+
+					if ((!isOverlap) || (isOverlap && isOverlapPossible)) {
+						for (i = 0; i < word.length; i++) {
+							var cell = $('#puzzleTable tr').eq(startRow).find('td').eq(startColumn);
+							cell.html(word[i]);
+							startRow++;
+						}
+					}
+					break;
+				}
+
+				return isSuccess;
+			}
+
+			function getRandomInteger(min, max) {
+				return Math.floor(Math.random() * (max - min + 1)) + min;
+			}
+
+			function findPlacements(word, puzzleSize) {
+				var zeroBasedWordLength = word.length - 1;
+				var placements = new Array();
+				var placementsCount = findPlacementsCount(word.length, puzzleSize);
+
+				addRowPlacements(placementsCount, zeroBasedWordLength, puzzleSize, placements);
+				addColumnPlacements(placementsCount, zeroBasedWordLength, puzzleSize, placements);
+
+				return placements;
+			}
+
+			function addRowPlacements(placementsCount, zeroBasedWordLength, puzzleSize, placements) {
+				for (row = 0; row < puzzleSize; row++) {
+					var startRow = row;
+					var startColumn = 0;
+
+					for (i = 0; i < placementsCount; i++) {
+						var placement = new Array();
+						placement[0] = startRow;
+						placement[1] = startColumn;
+						placement[2] = "horizontal";
+
+						placements.push(placement);
+
+						startColumn++;
+					}
+				}
+			}
+
+			function addColumnPlacements(placementsCount, zeroBasedWordLength, puzzleSize, placements) {
+				for (column = 0; column < puzzleSize; column++) {
+					var startRow = 0;
+					var startColumn = column;
+					for (i = 0; i < placementsCount; i++) {
+						var placement = new Array();
+						placement[0] = startRow;
+						placement[1] = startColumn;
+						placement[2] = "vertical";
+
+						placements.push(placement);
+
+						startRow++;
+					}
+				}
+			}
+
+			function findPlacementsCount(wordSize, cubeSize) {
+				return puzzleSize - word.length + 1;
+			}
+
+			function renderPuzzleTable(puzzleSize) {
+				var puzzleTableSize = getPuzzleTableSize(puzzleSize);
+				var container = $("#puzzleContainer");
+				var table = "<table id='puzzleTable' style='width:" + puzzleTableSize + "px;height:" + puzzleTableSize + "px;'>";
+				for (row = 0; row < puzzleSize; row++) {
+					table += "<tr>";
+					for (column = 0; column < puzzleSize; column++) {
+						table += "<td></td>";
+					}
+					table += "</tr>";
+				}
+				table += "</table>";
+
+				container.html(table);
+			}
+
+			function getPuzzleTableSize(puzzleSize) {
+				return puzzleSize * 50;
+			}
+		});
+</script>
+</body>
+</html>
