@@ -1,2 +1,2 @@
-word-search-puzzle
-==================
+word-search-puzzle-js
+=====================
